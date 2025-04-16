@@ -143,7 +143,7 @@ void cache::mapping(int mapping,string address_file){
 
     string address,bin,index,tag,block_offset,set;
     long int index_dec,block_offset_dec,tag_dec,set_dec;
-    ifstream txt("test4.txt");
+    ifstream txt(address_file);
 
     if(mapping==1){
         vector<int> cash(no_lines,-1);

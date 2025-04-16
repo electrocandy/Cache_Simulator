@@ -1,0 +1,6 @@
+64
+#cache size in kB
+4
+#line size in B
+1
+#mapping 1-Directly Mapped 2- Fully Associative 3- N-Way Set Associative 

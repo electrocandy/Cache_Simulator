@@ -23,8 +23,9 @@ float missrate;
 
 public:
 cache(long int cache_size,long int cache_line_size,int mapping);
-void mapping(int mapping);
+void mapping(int mapping,string address_file);
 void cache_info_display(int mapping);
+void Stats_display();
 };
 
 string hex2bin(string s){
@@ -138,7 +139,7 @@ cache::cache(long int cache_size,long int cache_line_size,int mapping){
     }
 }
 
-void cache::mapping(int mapping){
+void cache::mapping(int mapping,string address_file){
 
     string address,bin,index,tag,block_offset,set;
     long int index_dec,block_offset_dec,tag_dec,set_dec;
@@ -146,7 +147,7 @@ void cache::mapping(int mapping){
 
     if(mapping==1){
         vector<int> cash(no_lines,-1);
-        cout<<"tag"<<"|index"<<"|block_offset"<<endl;
+        //cout<<"tag"<<"|index"<<"|block_offset"<<endl;
         while(getline(txt,address)){
            bin=hex2bin(address);  
            tag=bin.substr(0,tag_bits);
@@ -266,15 +267,17 @@ void cache::mapping(int mapping){
        }
     txt.close();
     }
-    hitrate=(float)hits/(hits+miss);
-    missrate=(float)miss/(hits+miss);
-
-    cout<<"Hit Rate:"<<hitrate*100<<"%"<<endl;
-    cout<<"Miss Rate:"<<missrate*100<<"%"<<endl;
-
     /*for(int i=0;i<cash.size();i++){
         cout<<cash[i]<<endl;
     }*/
+}
+
+void cache::Stats_display(){
+    hitrate=(float)hits/(hits+miss);
+    missrate=(float)miss/(hits+miss);
+
+    cout<<"Hit Rate: "<<hitrate*100<<"%"<<endl;
+    cout<<"Miss Rate: "<<missrate*100<<"%"<<endl;
 }
 
 void cache::cache_info_display(int mapping){
@@ -295,8 +298,35 @@ void cache::cache_info_display(int mapping){
 }
 
 int main(int argc, char * argv[]){
-    int mapping=3;
-    cache c(64,4,mapping); //Cache Size in kB and cache line size in B
-    c.cache_info_display(mapping);
-    c.mapping(mapping);
+    int arr[3],count=0;
+    string str,address_file,info;
+    ifstream cache_config(argv[1]);
+    while(getline(cache_config,str)){
+        if(str[0]=='#'){
+            continue;
+        }else{
+            arr[count]=stoi(str);
+            ++count;
+        }
+    }
+    address_file=argv[2];
+    cache c(arr[0],arr[1],arr[2]); //Cache Size in kB and cache line size in B
+    cout<<"******************************************************************"<<endl;
+    cout<<"                       CACHE SIMULATOR                            "<<endl;
+    cout<<"******************************************************************"<<endl;
+    cout<<"Make Changes in the Cache_config.txt file for required config !!"<<endl;
+    cout<<"Is information about the cache required? (y/n)"<<endl;
+    cin>>info;
+    if(info[0]=='y' || info[0]=='Y'){
+       c.cache_info_display(arr[2]);
+    }
+    c.mapping(arr[2],address_file);
+    cout<<"*******************************************************************"<<endl;
+    cout<<"                       Cache Statistics                            "<<endl;
+    cout<<"*******************************************************************"<<endl;
+    cout<<"Display Cache Statistics? (y/n)"<<endl;
+    cin>>info;
+    if(info[0]=='y' || info[0]=='Y'){
+       c.Stats_display();
+    }
 }

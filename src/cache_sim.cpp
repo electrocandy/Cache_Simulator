@@ -23,7 +23,7 @@ float missrate;
 
 public:
 cache(long int cache_size,long int cache_line_size,int mapping);
-void mapping(int mapping,string address_file);
+void mapping(int mapping,string address_file,int L2_config);
 void cache_info_display(int mapping);
 void Stats_display();
 };
@@ -117,6 +117,14 @@ void replaceLRU(vector<long int> &cash,long int tag_dec,deque<long int> &LRU,lon
     LRU.push_back(tag_dec); //Adding the recently accessed address to the back of the deque
 }
 
+void LRU_pop(vector<deque<long int>> &LRU){
+    for(int i=0;i<LRU.size();i++){
+        if(!LRU[i].empty()){
+           LRU[i].pop_back();
+        }
+     }
+}
+
 cache::cache(long int cache_size,long int cache_line_size,int mapping){
     hits=0;
     miss=0;
@@ -139,7 +147,7 @@ cache::cache(long int cache_size,long int cache_line_size,int mapping){
     }
 }
 
-void cache::mapping(int mapping,string address_file){
+void cache::mapping(int mapping,string address_file,int L2_config){
 
     string address,bin,index,tag,block_offset,set;
     long int index_dec,block_offset_dec,tag_dec,set_dec;
@@ -218,14 +226,17 @@ void cache::mapping(int mapping,string address_file){
        long int set_placed;
        int count=0;
        
-       vector<vector<long int>> cash(no_sets,vector<long int>(set_associativity,-1));
+       vector<vector<long int>> cash(no_sets,vector<long int>(set_associativity,-1)); //L1 Cache
        vector<deque<long int>> LRU(no_sets);
 
-       for(int i=0;i<LRU.size();i++){
-          if(!LRU[i].empty()){
-             LRU[i].pop_back();
-          }
-       }
+       //L2 Cache
+       int no_sets1=no_lines/set_associativity;
+       long int no_lines1=L2_config<<10/cache_line_size;
+       vector<vector<long int>> cash(no_lines1,vector<long int>(set_associativity,-1));
+       vector<deque<long int>> LRU1(no_sets1);
+
+       LRU_pop(LRU); //Remove garbage value from each deque in the LRU vector
+       LRU_pop(LRU1);
 
        //cout<<"Tag|"<<"Set|"<<"Block_Offset"<<endl;
        while(getline(txt,address)){
@@ -234,13 +245,21 @@ void cache::mapping(int mapping,string address_file){
             tag=bin.substr(0,tag_bits);
             set=bin.substr(tag_bits-1,set_bits);
             block_offset=bin.substr(tag_bits+set_bits-1,block_offset_bits);
-
             tag_dec=bin2dec(tag);
             set_dec=bin2dec(set);
             block_offset_dec=bin2dec(block_offset);
             //cout<<tag_dec<<"|"<<set_dec<<"|"<<block_offset_dec<<"|";
             set_placed=set_dec%no_sets;
             //cout<<set_placed<<endl;
+
+           //L2 Cache
+           long int tag_dec1,set_dec1,tag_bits1,set_bits1;
+           set_bits1=log2(no_sets1);
+           tag_bits1=log2(Main_mem)-set_bits1-block_offset_bits;
+           tag=bin.substr(0,tag_bits1);
+           set=bin.substr(tag_bits1-1,set_bits1);
+
+
             for(int i=0;i<set_associativity;i++){
                 if(cash[set_placed][i]==-1){
                   miss++;
@@ -299,6 +318,7 @@ void cache::cache_info_display(int mapping){
 
 int main(int argc, char * argv[]){
     int arr[3],count=0;
+    int L2_config;
     string str,address_file,info;
     ifstream cache_config(argv[1]);
     while(getline(cache_config,str)){
@@ -320,7 +340,13 @@ int main(int argc, char * argv[]){
     if(info[0]=='y' || info[0]=='Y'){
        c.cache_info_display(arr[2]);
     }
-    c.mapping(arr[2],address_file);
+    cout<<"Is Level 2 cache required (4-Way Set Associative Cache) ? (y/n)";
+    cin>>info;
+    if(info[0]=='y' || info[0]=='Y'){
+        cout<<"L2: Cache Size (kB) =?";
+        cin>>L2_config;
+    }
+    c.mapping(arr[2],address_file,L2_config);
     cout<<"*******************************************************************"<<endl;
     cout<<"                       Cache Statistics                            "<<endl;
     cout<<"*******************************************************************"<<endl;

@@ -124,7 +124,9 @@ void Stats_display(int hits,int miss){
     float hitrate=0.0,missrate=0.0;
     hitrate=(float)hits/(hits+miss);
     missrate=(float)miss/(hits+miss);
-
+    cout<<"*******************************************************************"<<endl;
+    cout<<"                       Cache Statistics                            "<<endl;
+    cout<<"*******************************************************************"<<endl;
     cout<<"Hit Rate: "<<hitrate*100<<"%"<<endl;
     cout<<"Miss Rate: "<<missrate*100<<"%"<<endl;
 }
@@ -242,8 +244,17 @@ void cache::mapping(int mapping,string address_file,int L2_config){
        vector<deque<long int>> LRU(no_sets);
 
        //L2 Cache
-       long int no_lines1=L2_config<<10/cache_line_size;
+       long int tag_dec1,set_dec1,tag_bits1,set_bits1;
+       long int no_lines1=(L2_config<<10)/cache_line_size;
        int no_sets1=no_lines1/set_associativity;
+       set_bits1=log2(no_sets1);
+       tag_bits1=log2(Main_mem)-set_bits1-block_offset_bits;
+       cout<<endl;
+       cout<<"                  L2 Stats                    "<<endl;
+       cout<<"No of Line in L2 cache = "<<no_lines1<<endl;
+       cout<<"Block Offset bits in L2 cache = "<<block_offset_bits<<endl;
+       cout<<"Set bits in L2 cache = "<<set_bits1<<endl;
+       cout<<"Tag bits in L2 cache = "<<tag_bits1<<endl;
        vector<vector<long int>> cash1(no_sets1,vector<long int>(set_associativity,-1));
        vector<deque<long int>> LRU1(no_sets1);
 
@@ -265,17 +276,13 @@ void cache::mapping(int mapping,string address_file,int L2_config){
             //cout<<set_placed<<endl;
 
            //L2 Cache
-           /*long int tag_dec1,set_dec1,tag_bits1,set_bits1;
-           set_bits1=log2(no_sets1);
-           tag_bits1=log2(Main_mem)-set_bits1-block_offset_bits;
-           cout<<set_bits;
            tag=bin.substr(0,tag_bits1);
            set=bin.substr(tag_bits1-1,set_bits1);
           
            tag_dec1=bin2dec(tag);
            set_dec1=bin2dec(set);
 
-           set_placed1=set_dec1%no_sets1;*/
+           set_placed1=set_dec1%no_sets1;
 
             for(int i=0;i<set_associativity;i++){
                 if(cash[set_placed][i]==-1){
@@ -355,15 +362,8 @@ int main(int argc, char * argv[]){
        c.cache_info_display(arr[2]);
     }
     if(arr[2]==3){
-       cout<<"Is Level 2 cache required (4-Way Set Associative Cache) ? (y/n)"<<endl;
-       cin>>info;
-       if(info[0]=='y' || info[0]=='Y'){
-           cout<<"L2: Cache Size (kB) =?";
-           cin>>L2_config;
-       }
+       cout<<"L2 cache size (4-Way Set Associative Cache) (kB) = ? "<<endl;
+       cin>>L2_config;
     }
     c.mapping(arr[2],address_file,L2_config);
-    cout<<"*******************************************************************"<<endl;
-    cout<<"                       Cache Statistics                            "<<endl;
-    cout<<"*******************************************************************"<<endl;
 }

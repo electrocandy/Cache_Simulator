@@ -238,7 +238,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
        long int no_sets=1<<set_bits;
        long int set_placed,set_placed1;
        int hits1=0,miss1=0;
-       int count=0;
+       int count=0,count1=0;
        
        vector<vector<long int>> cash(no_sets,vector<long int>(set_associativity,-1)); //L1 Cache
        vector<deque<long int>> LRU(no_sets);
@@ -264,6 +264,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
        //cout<<"Tag|"<<"Set|"<<"Block_Offset"<<endl;
        while(getline(txt,address)){
             count=0;
+            count1=0;
             bin=hex2bin(address);
             tag=bin.substr(0,tag_bits);
             set=bin.substr(tag_bits-1,set_bits);
@@ -285,10 +286,18 @@ void cache::mapping(int mapping,string address_file,int L2_config){
            set_placed1=set_dec1%no_sets1;
 
             for(int i=0;i<set_associativity;i++){
-                if(cash[set_placed][i]==-1){
+                if(cash[set_placed][i]==-1){       //L1 compulsory miss
                   miss++;
                   cash[set_placed][i]=tag_dec;
                   LRU[set_placed].push_back(tag_dec);
+                  
+                  for(int j=0;j<set_associativity;j++){   
+                     miss1++;                                 //L2 compulsory miss
+                     if(cash1[set_placed1][j]==-1){
+                        cash1[set_placed1][j]=tag_dec1;
+                        LRU1[set_placed1].push_back(tag_dec1);
+                     }
+                  }
                   break;
                }else if(cash[set_placed][i]==tag_dec){
                   hits++;
@@ -298,7 +307,24 @@ void cache::mapping(int mapping,string address_file,int L2_config){
                            break;
                        }
                   }
-               }else{
+                  count1=1;
+               }else if(count1==0){ //If L1 miss then check L2
+                    bool found_L2=false;
+                    for(int j=0;j<set_associativity;j++){
+                        if(cash1[set_placed1][i]==tag_dec){
+                            hits1++;
+                            found_L2=true;
+                            for(auto it=LRU1[set_placed1].begin();it!=LRU1[set_placed1].end();it++){
+                                LRU1[set_placed1].erase(it);
+                                break;
+                            }
+                        }
+                    }
+                    if(!found_L2){ //If not present in L2, then L2 miss
+                        miss1++;
+                    }
+               }
+               else{
                     count++;
                     if(count==set_associativity){
                       miss++;
@@ -312,6 +338,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
         cin>>info;
         if(info[0]=='y' || info[0]=='Y'){
            Stats_display(hits,miss);
+           Stats_display(hits1,miss1);
         }
         txt.close();
     }
@@ -321,25 +348,26 @@ void cache::mapping(int mapping,string address_file,int L2_config){
 }
 
 void cache::cache_info_display(int mapping){
-    cout<<"Cache Size "<<cache_size<<" Kilo Bytes"<<endl;
-    cout<<"Cache Line Size "<<cache_line_size<<" Bytes"<<endl;
-    cout<<"Numbe of Blocks in Main Memory "<<no_blocks<<endl;
-    cout<<"No of Lines in Cache "<<no_lines<<endl;
-    cout<<"Block Offset bits "<<block_offset_bits<<endl;
+    cout<<endl;
+    cout<<"                  L1 Stats               "<<endl;
+    cout<<"L1 Cache Size = "<<cache_size<<" Kilo Bytes"<<endl;
+    cout<<"Cache Line Size = "<<cache_line_size<<" Bytes"<<endl;
+    cout<<"Numbe of Blocks in Main Memory = "<<no_blocks<<endl;
+    cout<<"No of Lines in L1 Cache = "<<no_lines<<endl;
+    cout<<"Block Offset bits in L1 cache = "<<block_offset_bits<<endl;
     if(mapping==1){
-        cout<<"Index bits "<<index_bits<<endl;
-        cout<<"Tag bits "<<tag_bits<<endl;
+        cout<<"Index bits in L1 cache = "<<index_bits<<endl;
+        cout<<"Tag bits in L1 cache = "<<tag_bits<<endl;
     }else if(mapping==2){
-        cout<<"Tag bits "<<tag_bits<<endl;
+        cout<<"Tag bits in L1 cache = "<<tag_bits<<endl;
     }else if(mapping==3){
-        cout<<"Set bits "<<set_bits<<endl;
-        cout<<"Tag bits "<<tag_bits<<endl;
+        cout<<"Set bits in L1 cache = "<<set_bits<<endl;
+        cout<<"Tag bits in L1 cache = "<<tag_bits<<endl;
     }
 }
 
 int main(int argc, char * argv[]){
-    int arr[3],count=0;
-    int L2_config=0;
+    int arr[4],count=0;
     string str,address_file,info;
     ifstream cache_config(argv[1]);
     while(getline(cache_config,str)){
@@ -361,9 +389,5 @@ int main(int argc, char * argv[]){
     if(info[0]=='y' || info[0]=='Y'){
        c.cache_info_display(arr[2]);
     }
-    if(arr[2]==3){
-       cout<<"L2 cache size (4-Way Set Associative Cache) (kB) = ? "<<endl;
-       cin>>L2_config;
-    }
-    c.mapping(arr[2],address_file,L2_config);
+    c.mapping(arr[2],address_file,arr[3]);
 }

@@ -131,6 +131,17 @@ void Stats_display(int hits,int miss){
     cout<<"Miss Rate: "<<missrate*100<<"%"<<endl;
 }
 
+void cache_hit(vector<long int> &cash,deque<long int> &LRU,int set_associativity,long int set_placed,long int tag_dec
+               ,int &hits){
+        hits++;
+        for(auto it=LRU.begin();it!=LRU.end();it++){
+            if(*it==tag_dec){
+                LRU.erase(it);
+                return;
+            }
+        }
+}
+
 cache::cache(long int cache_size,long int cache_line_size,int mapping){
     set_associativity=4;
     this->cache_size=cache_size;
@@ -238,7 +249,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
        long int no_sets=1<<set_bits;
        long int set_placed,set_placed1;
        int hits1=0,miss1=0;
-       int count=0,count1=0;
+       int count=0,count1=0,count2=0;
        
        vector<vector<long int>> cash(no_sets,vector<long int>(set_associativity,-1)); //L1 Cache
        vector<deque<long int>> LRU(no_sets);
@@ -265,6 +276,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
        while(getline(txt,address)){
             count=0;
             count1=0;
+            count2=0;
             bin=hex2bin(address);
             tag=bin.substr(0,tag_bits);
             set=bin.substr(tag_bits-1,set_bits);
@@ -291,15 +303,21 @@ void cache::mapping(int mapping,string address_file,int L2_config){
                   cash[set_placed][i]=tag_dec;
                   LRU[set_placed].push_back(tag_dec);
                   
-                  for(int j=0;j<set_associativity;j++){   
-                     miss1++;                                 //L2 compulsory miss
+                  bool l2_up=false;
+                  for(int j=0;j<set_associativity;j++){       //L2 compulsory miss
                      if(cash1[set_placed1][j]==-1){
+                        l2_up=true;
                         cash1[set_placed1][j]=tag_dec1;
                         LRU1[set_placed1].push_back(tag_dec1);
-                     }
+                        break;
+                    }
+                  }
+                  if(!l2_up){ //If L2 is filled, then LRU is used
+                    miss1++;
+                    replaceLRU(cash1[set_placed1],tag_dec1,LRU1[set_placed1],set_associativity);
                   }
                   break;
-               }else if(cash[set_placed][i]==tag_dec){
+               }else if(cash[set_placed][i]==tag_dec){ //L1 hit
                   hits++;
                   for(auto it=LRU[set_placed].begin();it!=LRU[set_placed].end();it++){
                         if(*it==tag_dec){
@@ -307,33 +325,32 @@ void cache::mapping(int mapping,string address_file,int L2_config){
                            break;
                        }
                   }
-                  count1=1;
-               }else if(count1==0){ //If L1 miss then check L2
-                    bool found_L2=false;
+                  LRU[set_placed].push_back(tag_dec);
+                  break;
+               }
+               else
+               { //If L1 miss then check L2
+                    bool L2_hit=false;
                     for(int j=0;j<set_associativity;j++){
-                        if(cash1[set_placed1][i]==tag_dec){
+                        if(cash1[set_placed1][j]==tag_dec1){
                             hits1++;
-                            found_L2=true;
+                            cash1[set_placed1][j]=tag_dec1;
                             for(auto it=LRU1[set_placed1].begin();it!=LRU1[set_placed1].end();it++){
                                 LRU1[set_placed1].erase(it);
                                 break;
                             }
+                            LRU1[set_placed1].push_back(tag_dec1);
+                            L2_hit=true;
+                            replaceLRU(cash[set_placed],tag_dec,LRU[set_placed],set_associativity); //Move the data tag to L1
+                            break;
                         }
                     }
-                    if(!found_L2){ //If not present in L2, then L2 miss
+                    if(!L2_hit){ //L2 miss
                         miss1++;
+                        replaceLRU(cash1[set_placed1],tag_dec1,LRU1[set_placed1],set_associativity);
                     }
-               }
-               else{
-                    count++;
-                    if(count==set_associativity){
-                      miss++;
-                      replaceLRU(cash[set_placed],tag_dec,LRU[set_placed],set_associativity);
-                      break;
                 }
-                }
-           }
-       }
+        }
         cout<<"Display Cache Statistics? (y/n)"<<endl;
         cin>>info;
         if(info[0]=='y' || info[0]=='Y'){
@@ -341,10 +358,12 @@ void cache::mapping(int mapping,string address_file,int L2_config){
            Stats_display(hits1,miss1);
         }
         txt.close();
-    }
     /*for(int i=0;i<cash.size();i++){
         cout<<cash[i]<<endl;
     }*/
+}
+
+}
 }
 
 void cache::cache_info_display(int mapping){

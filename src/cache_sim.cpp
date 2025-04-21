@@ -124,9 +124,6 @@ void Stats_display(int hits,int miss){
     float hitrate=0.0,missrate=0.0;
     hitrate=(float)hits/(hits+miss);
     missrate=(float)miss/(hits+miss);
-    cout<<"*******************************************************************"<<endl;
-    cout<<"                       Cache Statistics                            "<<endl;
-    cout<<"*******************************************************************"<<endl;
     cout<<"Hit Rate: "<<hitrate*100<<"%"<<endl;
     cout<<"Miss Rate: "<<missrate*100<<"%"<<endl;
 }
@@ -143,7 +140,7 @@ void cache_hit(vector<long int> &cash,deque<long int> &LRU,int set_associativity
 }
 
 cache::cache(long int cache_size,long int cache_line_size,int mapping){
-    set_associativity=4;
+    set_associativity=8;
     this->cache_size=cache_size;
     this->cache_line_size=cache_line_size;
     no_blocks=Main_mem/cache_line_size;
@@ -198,6 +195,9 @@ void cache::mapping(int mapping,string address_file,int L2_config){
         cout<<"Display Cache Statistics? (y/n)"<<endl;
         cin>>info;
         if(info[0]=='y' || info[0]=='Y'){
+           cout<<"*******************************************************************"<<endl;
+           cout<<"                       Cache Statistics                            "<<endl;
+           cout<<"*******************************************************************"<<endl;
            Stats_display(hits,miss);
         }
     }else if(mapping==2){
@@ -243,6 +243,9 @@ void cache::mapping(int mapping,string address_file,int L2_config){
         cout<<"Display Cache Statistics? (y/n)"<<endl;
         cin>>info;
         if(info[0]=='y' || info[0]=='Y'){
+           cout<<"*******************************************************************"<<endl;
+           cout<<"                       Cache Statistics                            "<<endl;
+           cout<<"*******************************************************************"<<endl;
            Stats_display(hits,miss);
         }
     }else if(mapping==3){ //N-Way Set Associative Cache
@@ -328,16 +331,17 @@ void cache::mapping(int mapping,string address_file,int L2_config){
                   LRU[set_placed].push_back(tag_dec);
                   break;
                }
-               else
-               { //If L1 miss then check L2
+               else if(i+1==set_associativity){ //If L1 miss then check L2
                     bool L2_hit=false;
                     for(int j=0;j<set_associativity;j++){
                         if(cash1[set_placed1][j]==tag_dec1){
                             hits1++;
                             cash1[set_placed1][j]=tag_dec1;
                             for(auto it=LRU1[set_placed1].begin();it!=LRU1[set_placed1].end();it++){
+                                if(*it==tag_dec1){
                                 LRU1[set_placed1].erase(it);
                                 break;
+                                }
                             }
                             LRU1[set_placed1].push_back(tag_dec1);
                             L2_hit=true;
@@ -351,19 +355,23 @@ void cache::mapping(int mapping,string address_file,int L2_config){
                     }
                 }
         }
-        cout<<"Display Cache Statistics? (y/n)"<<endl;
-        cin>>info;
-        if(info[0]=='y' || info[0]=='Y'){
-           Stats_display(hits,miss);
-           Stats_display(hits1,miss1);
-        }
-        txt.close();
     /*for(int i=0;i<cash.size();i++){
         cout<<cash[i]<<endl;
     }*/
-}
-
-}
+    }
+    cout<<"Display Cache Statistics? (y/n)"<<endl;
+    cin>>info;
+    if(info[0]=='y' || info[0]=='Y'){
+        cout<<"*******************************************************************"<<endl;
+        cout<<"                       Cache Statistics                            "<<endl;
+        cout<<"*******************************************************************"<<endl<<"\n";
+        cout<<"L1 Cache :"<<endl;
+        Stats_display(hits,miss);
+        cout<<"L2 Cache :"<<endl;
+        Stats_display(hits1,miss1);
+    }
+    txt.close();
+    }
 }
 
 void cache::cache_info_display(int mapping){

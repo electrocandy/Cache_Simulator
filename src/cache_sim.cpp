@@ -264,7 +264,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
        set_bits1=log2(no_sets1);
        tag_bits1=log2(Main_mem)-set_bits1-block_offset_bits;
        cout<<endl;
-       cout<<"                  L2 Stats                    "<<endl;
+       cout<<"***************** L2 Stats **********************"<<endl;
        cout<<"No of Line in L2 cache = "<<no_lines1<<endl;
        cout<<"Block Offset bits in L2 cache = "<<block_offset_bits<<endl;
        cout<<"Set bits in L2 cache = "<<set_bits1<<endl;
@@ -376,7 +376,7 @@ void cache::mapping(int mapping,string address_file,int L2_config){
 
 void cache::cache_info_display(int mapping){
     cout<<endl;
-    cout<<"                  L1 Stats               "<<endl;
+    cout<<"****************** L1 Stats **********************"<<endl;
     cout<<"L1 Cache Size = "<<cache_size<<" Kilo Bytes"<<endl;
     cout<<"Cache Line Size = "<<cache_line_size<<" Bytes"<<endl;
     cout<<"Numbe of Blocks in Main Memory = "<<no_blocks<<endl;

@@ -6,7 +6,7 @@ using namespace std;
 
 class cache{
 
-private:
+public:
 long int cache_size;
 long int cache_line_size;
 long int no_lines;
@@ -18,7 +18,7 @@ long int set_bits;
 int set_associativity;
 
 public:
-cache(long int cache_size,long int cache_line_size,int mapping);
+cache(long int cache_size,long int cache_line_size,int mapping,int set_associativity);
 void mapping(int mapping,string address_file,int L2_config);
 void cache_info_display(int mapping);
 };
@@ -139,8 +139,8 @@ void cache_hit(vector<long int> &cash,deque<long int> &LRU,int set_associativity
         }
 }
 
-cache::cache(long int cache_size,long int cache_line_size,int mapping){
-    set_associativity=8;
+cache::cache(long int cache_size,long int cache_line_size,int mapping,int set_associativity){
+    this->set_associativity=set_associativity;
     this->cache_size=cache_size;
     this->cache_line_size=cache_line_size;
     no_blocks=Main_mem/cache_line_size;
@@ -394,7 +394,7 @@ void cache::cache_info_display(int mapping){
 }
 
 int main(int argc, char * argv[]){
-    int arr[4],count=0;
+    int arr[5],count=0;
     string str,address_file,info;
     ifstream cache_config(argv[1]);
     while(getline(cache_config,str)){
@@ -406,7 +406,7 @@ int main(int argc, char * argv[]){
         }
     }
     address_file=argv[2];
-    cache c(arr[0],arr[1],arr[2]); //Cache Size in kB and cache line size in B
+    cache c(arr[0],arr[2],arr[3],arr[4]);  //Cache Size in kB and cache line size in B
     cout<<"******************************************************************"<<endl;
     cout<<"                       CACHE SIMULATOR                            "<<endl;
     cout<<"******************************************************************"<<endl;
@@ -414,7 +414,7 @@ int main(int argc, char * argv[]){
     cout<<"Is information about the cache required? (y/n)"<<endl;
     cin>>info;
     if(info[0]=='y' || info[0]=='Y'){
-       c.cache_info_display(arr[2]);
+       c.cache_info_display(arr[3]);
     }
-    c.mapping(arr[2],address_file,arr[3]);
+    c.mapping(arr[3],address_file,arr[1]);
 }

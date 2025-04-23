@@ -52,7 +52,7 @@ The set in L1 is first checked. If the line in the set is `-1`, then cache line 
 
 Advantageous compared to both Directly mapped and Fully Associative cache, as it combines both of them and strikes balance between both.
 
-'''
+```
 - Set number is computed for L1 and L2
 - Check cache lines in L1 of the set
   - If L1 cache (set)(line_number) == -1 //L1 Compulsory miss
@@ -73,4 +73,4 @@ Advantageous compared to both Directly mapped and Fully Associative cache, as it
     - If above condition not true //L2 miss
       - miss1++
       - Move tag to L2
-'''
+```
